@@ -1,9 +1,28 @@
 package net.ismeup.watcher.operation_controller;
 
+import net.ismeup.watcher.model.FailOperationResult;
+import net.ismeup.watcher.model.certificate_check.CertificateCheck;
+import net.ismeup.watcher.model.certificate_check.CertificateCheckParameter;
+import net.ismeup.watcher.model.content_check.ContentCheckOperationParameter;
+import net.ismeup.watcher.model.content_check.ContentCheck;
+import net.ismeup.watcher.model.disk_usage_check.DiskUsageCheck;
+import net.ismeup.watcher.model.disk_usage_check.DiskUsageCheckOperationParameters;
+import net.ismeup.watcher.model.load_average_check.LoadAverageCheck;
+import net.ismeup.watcher.model.load_average_check.LoadAverageOperationParameter;
+import net.ismeup.watcher.model.load_time_check.LoadTimeCheck;
+import net.ismeup.watcher.model.load_time_check.LoadTimeOperationParameters;
+import net.ismeup.watcher.model.memory_check.MemoryCheck;
+import net.ismeup.watcher.model.memory_check.MemoryCheckOperationParameter;
+import net.ismeup.watcher.model.ping_check.PingCheck;
+import net.ismeup.watcher.model.ping_check.PingCheckOperationParameters;
+import net.ismeup.watcher.model.port_check.PortCheckOperationParameter;
+import net.ismeup.watcher.model.port_check.PortCheck;
+import net.ismeup.watcher.model.status_ok_check.StatusOkCheckOperationParameter;
+import net.ismeup.watcher.model.status_ok_check.StatusOkCheck;
+import net.ismeup.watcher.model.uptime_check.UptimeCheck;
+import net.ismeup.watcher.model.uptime_check.UptimeCheckOperationParameter;
 import org.json.JSONObject;
 import net.ismeup.watcher.exceptions.OperationParseException;
-import net.ismeup.watcher.implementations.checker.*;
-import net.ismeup.watcher.implementations.model.*;
 import net.ismeup.watcher.interfaces.CheckOperationParameter;
 import net.ismeup.watcher.interfaces.Checker;
 import net.ismeup.watcher.interfaces.JsonableAnswer;
@@ -71,11 +90,11 @@ public class OperationController {
                     break;
                 case LOAD_TIME:
                     operationParamaters = new LoadTimeOperationParameters();
-                    checker = new LoadTimeChecker();
+                    checker = new LoadTimeCheck();
                     break;
                 case PORT_OPEN:
                     operationParamaters = new PortCheckOperationParameter();
-                    checker = new PortChecker();
+                    checker = new PortCheck();
                     break;
                 case CERTIFICATE_OK:
                     operationParamaters = new CertificateCheckParameter();
@@ -83,11 +102,11 @@ public class OperationController {
                     break;
                 case STATUS_OK:
                     operationParamaters = new StatusOkCheckOperationParameter();
-                    checker = new StatusOkChecker();
+                    checker = new StatusOkCheck();
                     break;
                 case CONTENT_CHECK:
                     operationParamaters = new ContentCheckOperationParameter();
-                    checker = new ContentChecker();
+                    checker = new ContentCheck();
                     break;
                 case MEMORY:
                     operationParamaters = new MemoryCheckOperationParameter();

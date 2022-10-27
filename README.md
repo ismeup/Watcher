@@ -6,15 +6,22 @@ You need Watcher in next cases:
 Watcher connects to IsMeUp's server by encrypted channel and gets from IsMeUp check tasks.
 Watcher needs installed Java 1.8 or above
 
-## Building
-The best way for building executable jar-file is using Maven:
+## Building from source
+The best way to build executable jar-file is using Maven:
 
     git clone https://github.com/ismeup/Watcher.git
     cd Watcher
     mvn assembly:assembly
 
+if you don't wan't to build Watcher yourself, you can download compiled version, which is available here: https://github.com/ismeup/Watcher/releases
+
 ## Running
-For running Watcher you need, in addition to Watcher executable, also a file called identity.key, which provides your secret key for Watcher. To get this key, you need to go to your Client Area, open Servers page, switch to Watchers tab, click "+" button and provide Watcher's name.
+For running Watcher you need, in addition to Watcher executable, also a file called identity.key, which provides your secret key for Watcher. 
+To get this key, you need to go to your Client Area, open Servers page, switch to Watchers tab, click "+" button and provide Watcher's name.
+You also can get identity.key file in standalone mode by running Watcher with `--register` argument:
+
+    java -jar Watcher.jar --register
+
 After that you will get identity.key file and put it in same directory with Watcher.jar and start Watcher with command:
 
     java -jar Watcher.jar
