@@ -1,8 +1,9 @@
 package net.ismeup.watcher.entry_controllers;
 
+import net.ismeup.apiclient.exceptions.ConnectionFailException;
+import net.ismeup.apiclient.model.ApiResult;
 import net.ismeup.watcher.Main;
 import net.ismeup.apiclient.controller.ApiConnector;
-import net.ismeup.apiclient.controller.ApiResult;
 import net.ismeup.apiclient.controller.CmdLineInput;
 import net.ismeup.apiclient.controller.OneTimeTokenStorage;
 import net.ismeup.apiclient.model.ApiConnectionData;
@@ -34,33 +35,37 @@ public class RegistrationController {
             ApiConnector apiConnector = new ApiConnector(connectionData, tokenStorage, false);
             CmdLineInput cmdLineInput = new CmdLineInput();
             LoginData loginData = cmdLineInput.authenticate("Watcher", 3600);
-            if (apiConnector.authenticate(loginData)) {
-                System.out.println("Logged in");
-                String newWatcherName = cmdLineInput.requestString("Enter name for new Watcher");
-                ServerWatcher serverWatcher = ServerWatcher.createByName(newWatcherName);
-                ApiResult apiResult = apiConnector.postOperation("server_watchers", "generate", new JSONObject().put("serverWatcher", serverWatcher.toJson()));
-                if (apiResult.isOk()) {
-                    try {
-                        ServerWatcher newWatcher = ServerWatcher.fromJson(apiResult.getAnswer().getJSONObject("watcher"));
-                        if (newWatcher.getKey() != null && !newWatcher.getKey().isEmpty()) {
-                            System.out.println("Watcher registered! Key is: " + newWatcher.getKey());
-                            System.out.print("Creating identity.key file...");
-                            boolean isOk = saveIdentity(newWatcher.getKey());
-                            System.out.println(isOk ? "OK" : "FAIL");
-                            if (!isOk) {
-                                System.out.println("File identity.key is not created! Check directory permissions");
+            try {
+                if (apiConnector.authenticate(loginData)) {
+                    System.out.println("Logged in");
+                    String newWatcherName = cmdLineInput.requestString("Enter name for new Watcher");
+                    ServerWatcher serverWatcher = ServerWatcher.createByName(newWatcherName);
+                    ApiResult apiResult = apiConnector.postOperation("server_watchers", "generate", new JSONObject().put("serverWatcher", serverWatcher.toJson()));
+                    if (apiResult.isOk()) {
+                        try {
+                            ServerWatcher newWatcher = ServerWatcher.fromJson(apiResult.getAnswer().getJSONObject("watcher"));
+                            if (newWatcher.getKey() != null && !newWatcher.getKey().isEmpty()) {
+                                System.out.println("Watcher registered! Key is: " + newWatcher.getKey());
+                                System.out.print("Creating identity.key file...");
+                                boolean isOk = saveIdentity(newWatcher.getKey());
+                                System.out.println(isOk ? "OK" : "FAIL");
+                                if (!isOk) {
+                                    System.out.println("File identity.key is not created! Check directory permissions");
+                                } else {
+                                    System.out.println("File identity.key created. Now you can run Watcher as usual!");
+                                }
                             } else {
-                                System.out.println("File identity.key created. Now you can run Watcher as usual!");
+                                System.out.println("Unknown error!");
                             }
-                        } else {
-                            System.out.println("Unknown error!");
+                        } catch (JSONException e) {
+                            System.out.println("Something went wrong. Try again");
                         }
-                    } catch (JSONException e) {
-                        System.out.println("Something went wrong. Try again");
                     }
+                } else {
+                    System.out.println("Login or password mismatch");
                 }
-            } else {
-                System.out.println("Login or password mismatch");
+            } catch (ConnectionFailException e) {
+
             }
         } else {
             System.out.println("identity.key file exists. Remove it first, if you want to register new Watcher, or run Watcher without --register argument");
