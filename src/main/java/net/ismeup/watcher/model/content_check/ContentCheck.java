@@ -3,6 +3,7 @@ package net.ismeup.watcher.model.content_check;
 import net.ismeup.watcher.interfaces.CheckOperationParameter;
 import net.ismeup.watcher.interfaces.CheckOperationResult;
 import net.ismeup.watcher.interfaces.Checker;
+import net.ismeup.watcher.model.UserAgentSetter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +24,7 @@ public class ContentCheck implements Checker {
             urlConnection.setConnectTimeout(5000);
             urlConnection.setReadTimeout(5000);
             HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
+            UserAgentSetter.set(httpURLConnection);
             InputStream inputStream = httpURLConnection.getInputStream();
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             int c;

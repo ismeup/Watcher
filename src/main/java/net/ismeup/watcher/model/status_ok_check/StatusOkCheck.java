@@ -3,6 +3,7 @@ package net.ismeup.watcher.model.status_ok_check;
 import net.ismeup.watcher.interfaces.CheckOperationParameter;
 import net.ismeup.watcher.interfaces.CheckOperationResult;
 import net.ismeup.watcher.interfaces.Checker;
+import net.ismeup.watcher.model.UserAgentSetter;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -27,11 +28,12 @@ public class StatusOkCheck implements Checker {
             urlConnection.setConnectTimeout(5000);
             urlConnection.setReadTimeout(5000);
             HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
+            UserAgentSetter.set(httpURLConnection);
             int code = httpURLConnection.getResponseCode();
             httpURLConnection.disconnect();
             status = code == 200;
         } catch (IOException e) {
-
+            System.out.println(e);
         }
     }
 

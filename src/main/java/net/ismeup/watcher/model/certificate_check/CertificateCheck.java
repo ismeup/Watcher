@@ -3,6 +3,7 @@ package net.ismeup.watcher.model.certificate_check;
 import net.ismeup.watcher.interfaces.CheckOperationParameter;
 import net.ismeup.watcher.interfaces.CheckOperationResult;
 import net.ismeup.watcher.interfaces.Checker;
+import net.ismeup.watcher.model.UserAgentSetter;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -34,6 +35,7 @@ public class CertificateCheck implements Checker {
             urlConnection.setConnectTimeout(5000);
             urlConnection.setReadTimeout(5000);
             HttpsURLConnection httpsURLConnection = (HttpsURLConnection) urlConnection;
+            UserAgentSetter.set(httpsURLConnection);
             byte[] bytes = new byte[10];
             urlConnection.getInputStream().read(bytes);
             Certificate[] certificates = httpsURLConnection.getServerCertificates();

@@ -6,12 +6,11 @@ import net.ismeup.watcher.client.RemoteClient;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.cert.X509Certificate;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -31,6 +30,7 @@ public class RunController {
             connectionData = new ConnectionData();
         }
         System.out.println("Connecting to " + connectionData.getHost() + ":" + connectionData.getPort());
+        disableCertificateValidation();
 
         String identity = loadIdentity();
         Cipher cipher = getCipher();
@@ -38,6 +38,32 @@ public class RunController {
             new Thread(new RemoteClient(connectionData, identity, cipher)).start();
         } else {
             System.out.println("Can not init RSA cipher");
+        }
+    }
+
+    public static void disableCertificateValidation() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            }};
+
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+        } catch (Exception e) {
+
         }
     }
 
