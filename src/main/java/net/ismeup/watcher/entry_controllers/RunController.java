@@ -1,6 +1,7 @@
 package net.ismeup.watcher.entry_controllers;
 
 import net.ismeup.watcher.Main;
+import net.ismeup.watcher.client.ClientManager;
 import net.ismeup.watcher.client.ConnectionData;
 import net.ismeup.watcher.client.RemoteClient;
 
@@ -35,7 +36,8 @@ public class RunController {
         String identity = loadIdentity();
         Cipher cipher = getCipher();
         if (cipher != null && !identity.isEmpty()) {
-            new Thread(new RemoteClient(connectionData, identity, cipher)).start();
+            //new Thread(new RemoteClient(connectionData, identity, cipher)).start();
+            new ClientManager(connectionData, identity, cipher);
         } else {
             System.out.println("Can not init RSA cipher");
         }

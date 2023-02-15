@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class RemoteClient implements Runnable {
+
+    private ClientManager clientManager;
     public final String identity;
     private final Cipher cipher;
     private InputStream inputStream;
@@ -30,20 +32,13 @@ public class RemoteClient implements Runnable {
     private String aesKey;
     private Cipher encryptAesCipher;
     private Cipher decryptAesCipher;
-    private final boolean master;
-    private int threadNumber = 0;
     private ConnectionData connectionData;
 
-    public RemoteClient(ConnectionData connectionData, String identity, Cipher cipher) {
-        this(connectionData, identity, cipher, true, 0);
-    }
-
-    public RemoteClient(ConnectionData connectionData, String identity, Cipher cipher, boolean master, int threadNumber) {
+    public RemoteClient(ClientManager clientManager, ConnectionData connectionData, String identity, Cipher cipher) {
+        this.clientManager = clientManager;
         this.connectionData = connectionData;
         this.identity = identity;
         this.cipher = cipher;
-        this.master = master;
-        this.threadNumber = threadNumber;
     }
 
     private void connect() throws RemoteConnectException {
@@ -53,7 +48,6 @@ public class RemoteClient implements Runnable {
             outputStream = socket.getOutputStream();
             configureCiphers();
             negotiate();
-            watchKeepAliveThread();
             readMessages();
         } catch (IOException e) {
             throw new RemoteConnectException();
@@ -106,29 +100,8 @@ public class RemoteClient implements Runnable {
         }
     }
 
-    private void printThread() {
-        System.out.print("TH " + threadNumber + " : ");
-    }
-
-    private void watchKeepAliveThread() {
-        new Thread(
-                () -> {
-                    while (true) {
-                        if (System.currentTimeMillis() - getLastSuccessPacket() > 60000) {
-                            printThread();
-                            System.out.println("Disconnection by keepalive timeout");
-                            disconnect();
-                            break;
-                        } else {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-
-                            }
-                        }
-                    }
-                }
-        ).start();
+    private void printThread(String message) {
+        System.out.println("TH " + clientManager.getThread(this) + " : " + message);
     }
 
     private long getLastSuccessPacket() {
@@ -137,16 +110,22 @@ public class RemoteClient implements Runnable {
         }
     }
 
+    public void disconnectByKeepAlive() {
+        if (ready && System.currentTimeMillis() - getLastSuccessPacket() > 60000) {
+            printThread("Disconnecting by keep alive timeout");
+            disconnect();
+        }
+    }
+
     private void updateKeepAlive() {
-        printThread();
-        System.out.println("Updating keep-alive");
+        printThread("Updating keep-alive");
         synchronized (this) {
             lastSuccessPacket = System.currentTimeMillis();
         }
     }
 
     void negotiate() {
-        JSONObject jsonObject = new JSONObject().put("iam", identity).put("aes", aesKey).put("master", master);
+        JSONObject jsonObject = new JSONObject().put("iam", identity).put("aes", aesKey);
         String message = jsonObject.toString();
         byte[] data = new byte[0];
         try {
@@ -204,8 +183,7 @@ public class RemoteClient implements Runnable {
     }
 
     private void sendBytes(byte[] dataBytes) {
-        printThread();
-        System.out.println(">>>>>>> " + new String(dataBytes));
+        printThread(">>>>>>> " + new String(dataBytes));
         try {
             synchronized (this) {
                 byte[] encryptedDataBytes = encryptAesCipher.doFinal(dataBytes);
@@ -237,21 +215,18 @@ public class RemoteClient implements Runnable {
             synchronized (this) {
                 message = new String(decryptAesCipher.doFinal(messageData));
             }
-            printThread();
-            System.out.println("<<<<<<< " + message);
+            printThread("<<<<<<< " + message);
             if (!ready && message.equals("HELLO" + identity)) {
                 updateKeepAlive();
                 ready = true;
                 return;
             }
             if (ready) {
-                if (master && message.startsWith("THREADS: ")) {
+                if (message.startsWith("THREADS: ")) {
                     try {
                         int threadsCount = Integer.parseInt(message.replaceFirst("THREADS: ", ""));
-                        if (threadsCount > 1 && threadsCount < 64) {
-                            for (int i = 0; i < threadsCount - 1; i++) {
-                                new Thread(new RemoteClient(connectionData, identity, cipher, false, i + 1)).start();
-                            }
+                        if (threadsCount > 0 && threadsCount < 64) {
+                            clientManager.requestThreads(threadsCount);
                         }
                     } catch (Exception e) {
                         disconnect();
@@ -296,27 +271,15 @@ public class RemoteClient implements Runnable {
 
     @Override
     public void run() {
-        boolean started = false;
-        while (!started || master) {
-            started = true;
-            printThread();
-            System.out.println("Connecting to server...");
-            try {
-                connect();
-            } catch (RemoteConnectException e) {
-                printThread();
-                System.out.println("Connection aborted!");
-            }
-            printThread();
-            System.out.println("Closing connection");
-            printThread();
-            System.out.println("Waiting 5 seconds to reconnect");
-            ready = false;
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-
-            }
+        clientManager.addThread(this);
+        printThread("Connecting to server...");
+        try {
+            connect();
+        } catch (RemoteConnectException e) {
+            printThread("Connection aborted!");
         }
+        printThread("Closing connection");
+        System.out.println();
+        clientManager.removeThread(this);
     }
 }
