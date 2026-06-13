@@ -1,3 +1,6 @@
+# Deprecation Warning!
+This implementation is deprecated. Use Python version https://github.com/ismeup/Agent
+
 # Watcher
 Watcher - is agent application for monitoring your server or network.
 You need Watcher in next cases:
